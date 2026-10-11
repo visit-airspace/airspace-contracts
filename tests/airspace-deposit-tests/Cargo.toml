@@ -1,0 +1,22 @@
+[package]
+name = "airspace-deposit-tests"
+version = { workspace = true }
+edition = { workspace = true }
+
+[lints]
+workspace = true
+
+[dependencies]
+litesvm = "^0.9.0"
+airspace-deposit = { path = "../../programs/airspace-deposit", features = ["no-entrypoint"] }
+pinocchio = { workspace = true }
+solana-sdk = "3.0.0"
+solana-program = "3.0.0"
+solana-account = "~3.2"
+spl-token-interface = "2.0.0"
+spl-associated-token-account = { version = "8.0.0", features = [
+    "no-entrypoint",
+] }
+solana-system-interface = "3.0.0"
+solana-address = "2.0.0"
+spl-token-2022 = { version = "10.0.0", features = ["no-entrypoint"] }

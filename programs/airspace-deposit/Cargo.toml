@@ -1,0 +1,26 @@
+[package]
+name = "airspace-deposit"
+version = { workspace = true }
+edition = { workspace = true }
+license = { workspace = true }
+description = "AirSpace deposit program, a custom program for deposit then remainder auctions"
+
+[lib]
+crate-type = ["cdylib", "lib"]
+
+[lints]
+workspace = true
+
+[features]
+no-entrypoint = []
+
+[dependencies]
+const-crypto = { workspace = true }
+solana-address = { version = "^2.0.0", features = ["copy", "curve25519"] }
+pinocchio = { workspace = true, features = ["cpi"] }
+pinocchio-associated-token-account = { workspace = true }
+pinocchio-system = { workspace = true }
+pinocchio-token = { workspace = true }
+pinocchio-token-2022 = { workspace = true }
+thiserror = { workspace = true }
+solana-security-txt = { workspace = true }

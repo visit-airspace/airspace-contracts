@@ -1,0 +1,38 @@
+.DS_Store
+.env
+.vscode/
+/keypairs
+
+/worktrees
+
+# Rust
+**/target/
+**/coverage/
+**/generated/
+
+# Javascript / Typescript
+**/node_modules/
+**/dist/
+
+# Playwright
+**/playwright-report/
+**/test-results/
+**/.playwright-mcp/
+
+# Solana Test Validator
+**/test-ledger
+.runbook-logs/*
+
+# Local
+.local/
+
+# CU tracking
+.cus/
+
+# Keyfiles
+.keypairs/
+.vercel
+.env*.local
+
+# StyleX
+.stylex/

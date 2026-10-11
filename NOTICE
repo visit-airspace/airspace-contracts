@@ -1,0 +1,14 @@
+AirSpace contracts
+
+This repository is a fork of the Solana Foundation escrow program,
+https://github.com/solana-foundation/escrow, taken at commit
+36187ad52c7c03d11b13b6f1da9461f2f757cee2. That commit is the one that the upstream
+audit covers.
+
+The upstream code is licensed under the MIT license, and its copyright notice is kept
+in LICENSE. The changes that AirSpace made to it, and the code that AirSpace added,
+are copyright AirSpace and licensed under the same MIT license.
+
+AirSpace changed the upstream program as listed in README.md: the Codama code
+generation was removed, a settlement extension and the instructions SetSettlement,
+Refund, and Settle were added, and Deposit and Withdraw got one new check each.
