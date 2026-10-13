@@ -151,7 +151,7 @@ flowchart LR
 
 ## Program addresses and security contact
 
-The escrow program address is `A2afr3RxBohFjP5zXhEsJDXU3se43dkd8XT2Bm8o5iKc`, and the deposit program address is `FSoKNTwhgG36NAxu5Axq84yvFZT1ASVz4muVxETwwjKk`. Neither is deployed to devnet yet. Both programs carry a `security_txt` that points to this repository and to `SECURITY.md`. Please report vulnerabilities to hello@visitairspace.xyz, as `SECURITY.md` describes.
+The escrow program address is `A2afr3RxBohFjP5zXhEsJDXU3se43dkd8XT2Bm8o5iKc`, and the deposit program address is `FSoKNTwhgG36NAxu5Axq84yvFZT1ASVz4muVxETwwjKk`. Both were deployed to devnet on October 13, 2026. The [devnet deployment record](docs/DEVNET_DEPLOYMENT.md) includes explorer links, upgrade authority, transaction signatures, and binary verification. Both programs carry a `security_txt` that points to this repository and to `SECURITY.md`. Please report vulnerabilities to hello@visitairspace.xyz, as `SECURITY.md` describes.
 
 ## Contact
 
