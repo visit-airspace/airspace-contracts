@@ -1,5 +1,10 @@
 # AirSpace contracts
 
+| Program | Address on Solana Explorer (devnet) |
+| --- | --- |
+| Escrow | [A2afr3RxBohFjP5zXhEsJDXU3se43dkd8XT2Bm8o5iKc](https://explorer.solana.com/address/A2afr3RxBohFjP5zXhEsJDXU3se43dkd8XT2Bm8o5iKc?cluster=devnet) |
+| Deposit-and-balance | [FSoKNTwhgG36NAxu5Axq84yvFZT1ASVz4muVxETwwjKk](https://explorer.solana.com/address/FSoKNTwhgG36NAxu5Axq84yvFZT1ASVz4muVxETwwjKk?cluster=devnet) |
+
 Solana programs for AirSpace, written in Rust with Pinocchio. The repository is a Cargo workspace with two programs, one for each AirSpace funding model.
 
 1. `programs/airspace-escrow` holds the money of a full escrow auction, where every bid is deposited whole. It is a fork of the Solana Foundation escrow program, documented in `docs/PROGRAM.md`.
@@ -153,7 +158,7 @@ flowchart LR
 
 ## Program addresses and security contact
 
-The escrow program address is `A2afr3RxBohFjP5zXhEsJDXU3se43dkd8XT2Bm8o5iKc`, and the deposit program address is `FSoKNTwhgG36NAxu5Axq84yvFZT1ASVz4muVxETwwjKk`. Both were deployed to devnet on October 13, 2026. The [devnet deployment record](docs/DEVNET_DEPLOYMENT.md) includes explorer links, upgrade authority, transaction signatures, and binary verification. Both programs carry a `security_txt` that points to this repository and to `SECURITY.md`. Please report vulnerabilities to hello@visitairspace.xyz, as `SECURITY.md` describes.
+Both programs were deployed to devnet on October 13, 2026. The [devnet deployment record](docs/DEVNET_DEPLOYMENT.md) includes explorer links, upgrade authority, transaction signatures, and binary verification. Both programs carry a `security_txt` that points to this repository and to `SECURITY.md`. Please report vulnerabilities to hello@visitairspace.xyz, as `SECURITY.md` describes.
 
 ## Contact
 
