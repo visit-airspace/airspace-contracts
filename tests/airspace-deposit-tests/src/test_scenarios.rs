@@ -1,4 +1,4 @@
-//! Whole auctions of the deposit then remainder model, with every balance checked.
+//! Whole auctions of the deposit-and-balance model, with every balance checked.
 
 use solana_sdk::signature::Signer;
 

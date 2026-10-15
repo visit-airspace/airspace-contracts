@@ -3,7 +3,7 @@ name = "airspace-deposit"
 version = { workspace = true }
 edition = { workspace = true }
 license = { workspace = true }
-description = "AirSpace deposit program, a custom program for deposit then remainder auctions"
+description = "AirSpace deposit program, a custom program for deposit-and-balance auctions"
 
 [lib]
 crate-type = ["cdylib", "lib"]

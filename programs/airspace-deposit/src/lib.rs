@@ -1,6 +1,6 @@
 //! # AirSpace Deposit Program
 //!
-//! A Solana program for deposit then remainder auctions. A bidder deposits a share of
+//! A Solana program for deposit-and-balance auctions. A bidder deposits a share of
 //! the bid, the admin declares one winner, the winner pays the remainder inside a
 //! payment window, and the sale settles to the treasury. A winner who does not pay
 //! forfeits the deposit, and every other deposit goes back to its bidder.

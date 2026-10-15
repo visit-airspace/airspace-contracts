@@ -3,7 +3,7 @@
 Solana programs for AirSpace, written in Rust with Pinocchio. The repository is a Cargo workspace with two programs, one for each AirSpace funding model.
 
 1. `programs/airspace-escrow` holds the money of a full escrow auction, where every bid is deposited whole. It is a fork of the Solana Foundation escrow program, documented in `docs/PROGRAM.md`.
-2. `programs/airspace-deposit` holds the money of a deposit then remainder auction, where a bidder deposits a share of the bid, the winner pays the rest inside a payment window, and a winner who does not pay forfeits the deposit. It is new code and not a fork, so none of it is audited. It is documented in `docs/DEPOSIT_PROGRAM.md`.
+2. `programs/airspace-deposit` holds the money of a deposit-and-balance auction, where a bidder deposits a share of the bid, the winner pays the rest inside a payment window, and a winner who does not pay forfeits the deposit. It is new code and not a fork, so none of it is audited. It is documented in `docs/DEPOSIT_PROGRAM.md`.
 3. `tests/airspace-escrow-tests` and `tests/airspace-deposit-tests` hold the LiteSVM tests of the two programs.
 4. `tests/test-hook-program` is a small hook program that the escrow tests use to prove the hook points.
 
@@ -137,7 +137,7 @@ sequenceDiagram
 flowchart LR
     Auction{Funding model}
     Auction -->|full escrow| E[airspace-escrow<br/>fork of the Solana Foundation escrow<br/>partly audited]
-    Auction -->|deposit then remainder| D[airspace-deposit<br/>new code<br/>unaudited]
+    Auction -->|deposit-and-balance model| D[airspace-deposit<br/>new code<br/>unaudited]
     E --> Money[(USDC)]
     D --> Money
 ```
