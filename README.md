@@ -12,7 +12,7 @@ Solana programs for AirSpace, written in Rust with Pinocchio. The repository is 
 3. `tests/airspace-escrow-tests` and `tests/airspace-deposit-tests` hold the LiteSVM tests of the two programs.
 4. `tests/test-hook-program` is a small hook program that the escrow tests use to prove the hook points.
 
-AirSpace ships the deposit-and-balance model first, on devnet. The full escrow model is coming soon, so the escrow program is deployed to devnet but no AirSpace auction uses it yet.
+AirSpace is building the deposit-and-balance integration first. Both programs are deployed to devnet for testing; full escrow is coming soon. The deployment record does not establish a completed auction flow with the AirSpace application.
 
 ## Where this code comes from
 
@@ -30,30 +30,56 @@ The AirSpace changes:
 
 The upstream Arbiter extension (type 3, a third party signer for withdrawals) is untouched. An escrow without settlement terms behaves exactly as upstream.
 
-## How AirSpace auctions use it
+## Planned full escrow integration
 
-AirSpace creates one escrow per full escrow auction, with its admin key, devnet USDC as the only allowed mint, and the AirSpace treasury as the beneficiary. The admin runs SetSettlement right after creating the escrow and before it allows the mint, so the rules are on chain before the first deposit. Each bid is one receipt for its whole amount. An outbid bid is refunded, and the winning bid is settled to the treasury. The deposit deadline is the end of the auction, and the escape time is one week later, so a bidder can always take their money back on their own if the admin disappears.
+The planned integration creates one escrow per full escrow auction, with its admin key, devnet USDC as the only allowed mint, and the AirSpace treasury as the beneficiary. The admin runs SetSettlement right after creating the escrow and before it allows the mint, so the rules are on chain before the first deposit. Each bid is one receipt for its whole amount. An outbid bid is refunded, and the winning bid is settled to the treasury. The deposit deadline is the end of the auction, and the escape time is one week later, but withdrawal also remains subject to any configured timelock, arbiter approval, and hooks. The escape time alone does not guarantee that a withdrawal succeeds.
 
 The instruction layouts, accounts, and errors are in `docs/PROGRAM.md`.
 
 ## Diagrams
 
-### Escrow program: accounts
+These figures explain the Solana programs in this repository, not Stripe payments or proof that an AirSpace auction has completed end to end. The [deployment record](docs/DEVNET_DEPLOYMENT.md) documents devnet testing and retained upgrade authority: the programs can be upgraded. AirSpace's changes and the deposit program have not been independently audited.
+
+**Colors:** blue = sponsor actions; purple = admin control; green = funds or payments; amber = rules or conditions; red = forfeiture; gray = records or endpoints. Arrows show relationships or possible instructions, not automatic payments.
+
+### Figure 1. Escrow — where is my money held?
 
 ```mermaid
 flowchart LR
-    Admin([Admin key]) -->|CreateEscrow| Escrow[Escrow PDA<br/>seeds: escrow, escrow_seed]
-    Admin -->|AddTimelock, SetHook, SetArbiter, SetSettlement,<br/>BlockTokenExtension| Ext[Extensions PDA<br/>seeds: extensions, escrow]
-    Admin -->|AllowMint| AM[AllowedMint PDA<br/>seeds: allowed_mint, escrow, mint]
+    Admin([Admin key]) e1@-->|CreateEscrow| Escrow[Escrow PDA<br/>seeds: escrow, escrow_seed]
+    Admin e2@-->|AddTimelock, SetHook, SetArbiter, SetSettlement,<br/>BlockTokenExtension| Ext[Extensions PDA<br/>seeds: extensions, escrow]
+    Admin e3@-->|AllowMint| AM[AllowedMint PDA<br/>seeds: allowed_mint, escrow, mint]
     Escrow --- Ext
-    Escrow -->|owns| Vault[(Vault<br/>associated token account)]
-    Depositor([Depositor]) -->|Deposit| Receipt[Receipt PDA<br/>seeds: receipt, escrow, depositor,<br/>mint, receipt_seed]
-    Depositor -->|tokens| Vault
-    Receipt -.->|belongs to| Escrow
-    Ext -.->|Settlement type 4| Terms{{beneficiary<br/>deposit deadline<br/>escape time}}
+    Escrow e5@-->|owns| Vault[(Vault<br/>associated token account)]
+    Depositor([Depositor]) e6@-->|Deposit| Receipt[Receipt PDA<br/>seeds: receipt, escrow, depositor,<br/>mint, receipt_seed]
+    Depositor e7@-->|tokens| Vault
+    Receipt e8@-.->|belongs to| Escrow
+    Ext e9@-.->|Settlement type 4| Terms{{beneficiary<br/>deposit deadline<br/>escape time}}
+    e1@{ animation: slow }
+    e2@{ animation: slow }
+    e3@{ animation: slow }
+    e5@{ animation: slow }
+    e6@{ animation: slow }
+    e7@{ animation: slow }
+    e8@{ animation: slow }
+    e9@{ animation: slow }
+    classDef sponsor fill:#DBEAFE,stroke:#1D4ED8,color:#172554,stroke-width:2px;
+    class Depositor sponsor;
+    classDef admin fill:#EDE9FE,stroke:#6D28D9,color:#2E1065,stroke-width:2px;
+    class Admin admin;
+    classDef money fill:#DCFCE7,stroke:#15803D,color:#14532D,stroke-width:2px;
+    class Vault money;
+    classDef rules fill:#FEF3C7,stroke:#B45309,color:#451A03,stroke-width:2px;
+    class Terms,Ext,AM rules;
+    classDef record fill:#F1F5F9,stroke:#475569,color:#0F172A,stroke-width:2px;
+    class Escrow,Receipt record;
 ```
 
-### Escrow program: instructions and who can send them
+**For sponsors:** Your tokens are held in an escrow vault, and a receipt records your deposit. Read the settlement recipient and withdrawal conditions before depositing; holding funds in a contract does not remove admin or upgrade authority.
+
+**Verify:** [Escrow accounts and extensions](docs/PROGRAM.md).
+
+### Figure 2. Escrow — who can move my money?
 
 ```mermaid
 flowchart LR
@@ -64,90 +90,193 @@ flowchart LR
         AM[6 AllowMint<br/>7 BlockMint]
         PAY[14 Refund<br/>15 Settle<br/>AirSpace]
     end
-    subgraph DepositorOnly[Depositor signs]
-        DEP[3 Deposit]
-        WD[5 Withdraw]
-    end
-    CE --> ST --> AM --> DEP
-    DEP -->|from the escape time when terms exist, any time otherwise| WD
-    DEP --> PAY
-    WD --> Done([Receipt closed])
-    PAY --> Done
+    DEP[3 Deposit<br/>Depositor signs]
+    WD[5 Withdraw<br/>Depositor signs<br/>Withdrawal conditions apply]
+    CE e1@--> ST
+    ST e2@--> AM
+    AM e3@--> DEP
+    DEP e4@--> WD
+    DEP e5@--> PAY
+    WD e6@--> Done([Receipt closed])
+    PAY e7@--> Done
+    e1@{ animation: slow }
+    e2@{ animation: slow }
+    e3@{ animation: slow }
+    e4@{ animation: slow }
+    e5@{ animation: slow }
+    e6@{ animation: slow }
+    e7@{ animation: slow }
+    classDef sponsor fill:#DBEAFE,stroke:#1D4ED8,color:#172554,stroke-width:2px;
+    class DEP,WD sponsor;
+    classDef admin fill:#EDE9FE,stroke:#6D28D9,color:#2E1065,stroke-width:2px;
+    class CE,ST,AM,PAY,EXT admin;
+    classDef record fill:#F1F5F9,stroke:#475569,color:#0F172A,stroke-width:2px;
+    class Done record;
 ```
 
-### Escrow program: life of one receipt
+**For sponsors:** You sign deposits and withdrawals; the admin can submit refunds and settlements. Withdrawals also check configured timelocks, arbiter approval, and hooks, so the escape time is not an unconditional refund guarantee.
 
-```mermaid
-stateDiagram-v2
-    direction LR
-    [*] --> Deposited: Deposit, before the deposit deadline
-    Deposited --> Refunded: Refund by admin, to the depositor
-    Deposited --> Settled: Settle by admin, to the beneficiary
-    Deposited --> Withdrawn: Withdraw by depositor, from the escape time when terms exist
-    Refunded --> [*]: receipt closed, rent to depositor
-    Settled --> [*]: receipt closed, rent to depositor
-    Withdrawn --> [*]: receipt closed
-```
+**Verify:** [Withdrawal checks](programs/airspace-escrow/src/instructions/withdraw/processor.rs) and [admin payout checks](programs/airspace-escrow/src/instructions/admin_payout.rs).
 
-### Deposit program: accounts
+### Figure 3. Escrow — how does my deposit leave the vault?
 
 ```mermaid
 flowchart LR
-    Admin([Admin key]) -->|CreateAuction| Auction[Auction PDA<br/>seeds: auction, admin, auction_id<br/>terms and winner_bid]
-    Auction -->|owns| Vault[(Vault<br/>associated token account)]
-    Auction -.->|pays only| Treasury[(Treasury<br/>token account)]
-    Bidder([Bidder]) -->|PlaceDeposit| Bid[Bid PDA<br/>seeds: bid, auction, bidder, bid_seed<br/>state, amount, deposit, deadline]
-    Bidder -->|deposit and remainder| Vault
-    Bid -.->|belongs to| Auction
+    Start((Start)) e1@-->|Deposit, at or before deadline if set| Deposited[Deposited]
+    Deposited e2@-->|Refund by admin, to the depositor| Refunded[Refunded]
+    Deposited e3@-->|Settle by admin, to the beneficiary| Settled[Settled]
+    Deposited e4@-->|Withdraw by depositor, if all conditions pass| Withdrawn[Withdrawn]
+    Refunded e5@-->|receipt closed, rent to depositor| Done((End))
+    Settled e6@-->|receipt closed, rent to depositor| Done
+    Withdrawn e7@-->|receipt closed| Done
+    e1@{ animation: slow }
+    e2@{ animation: slow }
+    e3@{ animation: slow }
+    e4@{ animation: slow }
+    e5@{ animation: slow }
+    e6@{ animation: slow }
+    e7@{ animation: slow }
+    classDef sponsor fill:#DBEAFE,stroke:#1D4ED8,color:#172554,stroke-width:2px;
+    class Deposited sponsor;
+    classDef money fill:#DCFCE7,stroke:#15803D,color:#14532D,stroke-width:2px;
+    class Refunded,Settled,Withdrawn money;
+    classDef record fill:#F1F5F9,stroke:#475569,color:#0F172A,stroke-width:2px;
+    class Start,Done record;
 ```
 
-### Deposit program: life of one bid
+**For sponsors:** A refund returns your receipt amount to you; settlement sends it to the configured beneficiary. The program checks those recipients, but does not verify that a sponsorship was delivered before the admin settles.
+
+**Verify:** [Refund and settlement implementation](programs/airspace-escrow/src/instructions/admin_payout.rs).
+
+### Figure 4. Deposit-and-balance — what secures my bid?
 
 ```mermaid
-stateDiagram-v2
-    direction LR
-    [*] --> Deposited: PlaceDeposit, before the bid deadline
-    Deposited --> [*]: RefundDeposit by admin, deposit back to the bidder
-    Deposited --> [*]: Escape by bidder, from the escape time
-    Deposited --> Winner: DeclareWinner by admin, once per auction
-    Winner --> Paid: PayRemainder by the winner, before the remainder deadline
-    Winner --> [*]: Forfeit by anyone, after the remainder deadline, deposit to the treasury
-    Paid --> [*]: Settle by anyone, whole bid to the treasury
+flowchart LR
+    Admin([Admin key]) e1@-->|CreateAuction| Auction[Auction PDA<br/>seeds: auction, admin, auction_id<br/>terms and winner_bid]
+    Auction e2@-->|owns| Vault[(Vault<br/>associated token account)]
+    Auction e3@-.->|pays only| Treasury[(Treasury<br/>token account)]
+    Bidder([Bidder]) e4@-->|PlaceDeposit| Bid[Bid PDA<br/>seeds: bid, auction, bidder, bid_seed<br/>state, amount, deposit, deadline]
+    Bidder e5@-->|deposit and remainder| Vault
+    Bid e6@-.->|belongs to| Auction
+    e1@{ animation: slow }
+    e2@{ animation: slow }
+    e3@{ animation: slow }
+    e4@{ animation: slow }
+    e5@{ animation: slow }
+    e6@{ animation: slow }
+    classDef sponsor fill:#DBEAFE,stroke:#1D4ED8,color:#172554,stroke-width:2px;
+    class Bidder sponsor;
+    classDef admin fill:#EDE9FE,stroke:#6D28D9,color:#2E1065,stroke-width:2px;
+    class Admin admin;
+    classDef money fill:#DCFCE7,stroke:#15803D,color:#14532D,stroke-width:2px;
+    class Vault,Treasury money;
+    classDef rules fill:#FEF3C7,stroke:#B45309,color:#451A03,stroke-width:2px;
+    class Auction rules;
+    classDef record fill:#F1F5F9,stroke:#475569,color:#0F172A,stroke-width:2px;
+    class Bid record;
 ```
 
-### Deposit program: timeline of one auction
+**For sponsors:** Your deposit sits in the auction vault and your bid record tracks what you paid. The auction fixes its treasury and payment terms at creation; the program computes your deposit from those terms.
+
+**Verify:** [Auction creation](programs/airspace-deposit/src/instructions/create_auction.rs) and [deposit calculation](programs/airspace-deposit/src/state.rs).
+
+### Figure 5. Deposit-and-balance — when do I get a refund or lose my deposit?
 
 ```mermaid
-sequenceDiagram
-    participant B as Bidders
-    participant P as Deposit program
-    participant A as Admin
-    participant T as Treasury
-    A->>P: CreateAuction with fixed terms
-    B->>P: PlaceDeposit, before the bid deadline
-    Note over B,T: Deposit is the share of the bid,<br/>rounded up to a whole dollar,<br/>and at least the minimum
-    A->>P: RefundDeposit for each losing bid
-    A->>P: DeclareWinner, after the bid deadline
-    Note over B,T: The payment window starts now,<br/>and must end before the escape time
-    alt winner pays in time
-        B->>P: PayRemainder, exactly bid minus deposit
-        P->>T: Settle sends the whole bid
-    else winner does not pay
-        P->>T: Forfeit sends only the deposit
-    end
-    Note over B,T: If the admin disappears,<br/>Escape returns each deposited bid<br/>after the escape time
+flowchart LR
+    Start((Start)) e1@-->|PlaceDeposit, at or before bid deadline| Deposited[Deposited]
+    Deposited e2@-->|RefundDeposit by admin, deposit back to the bidder| Returned([Deposit returned<br/>bid closed])
+    Deposited e3@-->|Escape by bidder, from the escape time| Returned
+    Deposited e4@-->|DeclareWinner by admin, once per auction| Winner[Winner]
+    Winner e5@-->|PayRemainder by winner, at or before payment deadline| Paid[Paid]
+    Winner e6@-->|Forfeit by anyone, after the remainder deadline, deposit to the treasury| Forfeited([Deposit forfeited<br/>bid closed])
+    Paid e7@-->|Settle by anyone, whole bid to the treasury| Settled([Whole bid settled<br/>bid closed])
+    e1@{ animation: slow }
+    e2@{ animation: slow }
+    e3@{ animation: slow }
+    e4@{ animation: slow }
+    e5@{ animation: slow }
+    e6@{ animation: slow }
+    e7@{ animation: slow }
+    classDef sponsor fill:#DBEAFE,stroke:#1D4ED8,color:#172554,stroke-width:2px;
+    class Deposited sponsor;
+    classDef rules fill:#FEF3C7,stroke:#B45309,color:#451A03,stroke-width:2px;
+    class Winner rules;
+    classDef money fill:#DCFCE7,stroke:#15803D,color:#14532D,stroke-width:2px;
+    class Paid,Returned,Settled money;
+    classDef record fill:#F1F5F9,stroke:#475569,color:#0F172A,stroke-width:2px;
+    class Start record;
+    classDef loss fill:#FEE2E2,stroke:#B91C1C,color:#450A0A,stroke-width:2px;
+    class Forfeited loss;
 ```
 
-### Which program an AirSpace auction uses
+**For sponsors:** While your bid remains deposited, the admin can refund it, or you can reclaim it from the escape time. Once declared the winner, you must pay the balance on time or forfeit the deposit; that winning bid cannot escape.
+
+**Verify:** [Escape eligibility](programs/airspace-deposit/src/instructions/escape.rs) and [forfeiture checks](programs/airspace-deposit/src/instructions/forfeit.rs).
+
+### Figure 6. Deposit-and-balance — who picks the winner and when must I pay?
+
+```mermaid
+flowchart LR
+    Create[Admin creates auction<br/>fixed deposit share and deadlines]
+    Deposited[Bidders deposit into the vault]
+    Winner[Admin declares one winner<br/>payment window starts]
+    Paid[Winner pays the balance into the vault]
+    Returned([Deposit returned to bidder<br/>bid closed])
+    Settled([Whole bid paid to treasury<br/>bid closed])
+    Forfeited([Only deposit paid to treasury<br/>bid closed])
+    Create e1@-->|PlaceDeposit: at or before bid deadline| Deposited
+    Deposited e2@-->|RefundDeposit: admin refunds a deposited bid| Returned
+    Deposited e3@-->|Escape: bidder reclaims at or after escape time| Returned
+    Deposited e4@-->|DeclareWinner: admin, after bid deadline| Winner
+    Winner e5@-->|PayRemainder: winner, at or before payment deadline| Paid
+    Paid e6@-->|Settle: anyone may submit| Settled
+    Winner e7@-->|Forfeit: anyone, after payment deadline if unpaid| Forfeited
+    e1@{ animation: slow }
+    e2@{ animation: slow }
+    e3@{ animation: slow }
+    e4@{ animation: slow }
+    e5@{ animation: slow }
+    e6@{ animation: slow }
+    e7@{ animation: slow }
+    classDef admin fill:#EDE9FE,stroke:#6D28D9,color:#2E1065,stroke-width:2px;
+    class Create,Winner admin;
+    classDef sponsor fill:#DBEAFE,stroke:#1D4ED8,color:#172554,stroke-width:2px;
+    class Deposited sponsor;
+    classDef money fill:#DCFCE7,stroke:#15803D,color:#14532D,stroke-width:2px;
+    class Paid,Returned,Settled money;
+    classDef loss fill:#FEE2E2,stroke:#B91C1C,color:#450A0A,stroke-width:2px;
+    class Forfeited loss;
+```
+
+**For sponsors:** The admin selects one deposited bid; the program does not rank bids. Your payment window starts at declaration and must end before the escape time; settlement and forfeiture each require someone to submit a transaction.
+
+**Verify:** [Winner declaration](programs/airspace-deposit/src/instructions/declare_winner.rs), [balance payment](programs/airspace-deposit/src/instructions/pay_remainder.rs), and [settlement](programs/airspace-deposit/src/instructions/settle.rs).
+
+### Figure 7. Which payment model am I using?
 
 ```mermaid
 flowchart LR
     Auction{Funding model}
-    Auction -->|full escrow| E[airspace-escrow<br/>fork of the Solana Foundation escrow<br/>partly audited]
-    Auction -->|deposit-and-balance model| D[airspace-deposit<br/>new code<br/>unaudited]
-    E --> Money[(USDC)]
-    D --> Money
+    Auction e1@-->|full escrow| E[airspace-escrow<br/>full escrow: coming soon<br/>AirSpace changes unaudited]
+    Auction e2@-->|deposit-and-balance model| D[airspace-deposit<br/>deposit-and-balance<br/>unaudited]
+    E e3@--> Money[(USDC)]
+    D e4@--> Money
+    e1@{ animation: slow }
+    e2@{ animation: slow }
+    e3@{ animation: slow }
+    e4@{ animation: slow }
+    classDef rules fill:#FEF3C7,stroke:#B45309,color:#451A03,stroke-width:2px;
+    class Auction rules;
+    classDef record fill:#F1F5F9,stroke:#475569,color:#0F172A,stroke-width:2px;
+    class E,D record;
+    classDef money fill:#DCFCE7,stroke:#15803D,color:#14532D,stroke-width:2px;
+    class Money money;
 ```
+
+**For sponsors:** The deposit-and-balance model is the first planned AirSpace integration; full escrow is coming soon. Both program addresses are documented on devnet, which uses test funds; deployment alone does not establish a working sponsorship purchase.
+
+**Verify:** [Deployment scope and verification record](docs/DEVNET_DEPLOYMENT.md).
 
 ## Build and test
 
