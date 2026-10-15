@@ -7,6 +7,8 @@ Solana programs for AirSpace, written in Rust with Pinocchio. The repository is 
 3. `tests/airspace-escrow-tests` and `tests/airspace-deposit-tests` hold the LiteSVM tests of the two programs.
 4. `tests/test-hook-program` is a small hook program that the escrow tests use to prove the hook points.
 
+AirSpace ships the deposit-and-balance model first, on devnet. The full escrow model is coming soon, so the escrow program is deployed to devnet but no AirSpace auction uses it yet.
+
 ## Where this code comes from
 
 The escrow program is a fork of https://github.com/solana-foundation/escrow at commit `36187ad52c7c03d11b13b6f1da9461f2f757cee2`. That is the commit the upstream audit covers. NOTICE states the origin commit and the license terms.
