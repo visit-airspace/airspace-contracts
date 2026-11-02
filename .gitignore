@@ -36,3 +36,5 @@
 
 # StyleX
 .stylex/
+# Secondary JJ workspaces created by jjx
+/workspaces/
