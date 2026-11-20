@@ -1,0 +1,25 @@
+---
+description: Build and verify the AirSpace contracts locally.
+---
+
+***definitions***
+
+- :ContractsVerification: is the local build, test, formatting, and lint workflow for the contracts workspace.
+- :SbfFixture: is a compiled Solana program embedded by the LiteSVM tests.
+
+***implementation reqs***
+
+- Expose :ContractsVerification: as `make verify` from the repository root, using Make, Cargo, and the installed Solana SBF toolchain.
+- Build the allow and deny variants separately because both builds emit `test_hook_program.so`. Give each variant its own SBF build output directory. Stage each variant before starting the next build, even when Make is invoked with parallel jobs.
+- Use an explicit SBF output directory so the four :SbfFixture: files land in the repository's `target/deploy/` directory regardless of Cargo's target directory setting.
+- Stop on any failed build, copy, test, formatting check, or lint check.
+
+***test reqs***
+
+- Use a Cargo stand-in to verify command order, staged fixture identity, and exit behavior without compiling the workspace.
+- Run the command with the real Cargo and SBF toolchain to check the assembled fixtures against the existing LiteSVM tests.
+
+***functional specs***
+
+# verify-contracts
+:ContractsVerification: builds the escrow and deposit programs as `airspace_escrow.so` and `airspace_deposit.so` and stages the two hook variants as `test_hook_allow.so` and `test_hook_deny.so`. Once all four :SbfFixture: files are ready, run `cargo test`, `cargo fmt --all --check`, and `cargo clippy --all-targets -- -D warnings`, in that order.

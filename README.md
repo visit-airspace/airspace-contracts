@@ -280,6 +280,20 @@ flowchart LR
 
 ## Build and test
 
+Run `make verify` from the repository root with the pinned Rust toolchain and
+Solana's `cargo build-sbf` installed. It builds the four SBF fixtures for LiteSVM,
+runs the tests, and checks formatting and lint.
+
+The [Plain specification](specs/plain/contracts-verification.plain) and its
+[scenarios](specs/plain/tests/contracts-verification/verify-contracts.plain)
+define the workflow. To validate them with Plain Parser, run:
+
+```sh
+plain-parser check specs/plain/contracts-verification.plain --tests-folder specs/plain/tests
+```
+
+To run the steps individually:
+
 1. `cargo build-sbf` in `programs/airspace-escrow` and in `programs/airspace-deposit` builds the programs. Build both before running the tests, because the tests load `target/deploy/*.so`.
 2. In `tests/test-hook-program`, `cargo build-sbf --features allow` and `cargo build-sbf --features deny` build the two hook programs. Copy `target/deploy/test_hook_program.so` to `test_hook_allow.so` and `test_hook_deny.so` in the same directory after each build.
 3. `cargo test` runs the unit tests and the LiteSVM tests.

@@ -1,0 +1,14 @@
+---
+module: contracts-verification
+func_id: verify-contracts
+---
+
+***conformance tests***
+
+# stages-fixtures-before-testing
+Given an empty fixture directory and a Cargo stand-in that writes a distinct marker for each program and hook variant, when `make -j4 verify` runs, then Cargo's test command sees all four markers under their corresponding fixture filenames, followed by the formatting and lint checks.
+
+***acceptance tests***
+
+# stops-after-failure
+Given a Cargo stand-in that can fail at a selected build or check, when `make verify` reaches that failure, then Make exits with a failure and no later Cargo command runs.
