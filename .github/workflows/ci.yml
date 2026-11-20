@@ -1,7 +1,5 @@
 name: CI
 
-# Builds both programs and the hook programs, then runs the unit and LiteSVM
-# tests and the style checks from the README.
 on:
   push:
     branches: [main]
@@ -43,20 +41,5 @@ jobs:
           fi
           echo "$HOME/.local/share/solana/install/active_release/bin" >> "$GITHUB_PATH"
       - uses: Swatinem/rust-cache@v2
-      - name: Check formatting
-        run: cargo fmt --all --check
-      - name: Build the programs
-        run: |
-          cargo build-sbf --version
-          cargo build-sbf --manifest-path programs/airspace-escrow/Cargo.toml
-          cargo build-sbf --manifest-path programs/airspace-deposit/Cargo.toml
-      - name: Build the hook programs
-        run: |
-          cargo build-sbf --manifest-path tests/test-hook-program/Cargo.toml --features allow
-          cp target/deploy/test_hook_program.so target/deploy/test_hook_allow.so
-          cargo build-sbf --manifest-path tests/test-hook-program/Cargo.toml --features deny
-          cp target/deploy/test_hook_program.so target/deploy/test_hook_deny.so
-      - name: Clippy
-        run: cargo clippy --all-targets -- -D warnings
-      - name: Tests
-        run: cargo test --quiet
+      - name: Verify contracts
+        run: make verify
