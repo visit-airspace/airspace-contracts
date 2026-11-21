@@ -292,6 +292,9 @@ define the workflow. To validate them with Plain Parser, run:
 plain-parser check specs/plain/contracts-verification.plain --tests-folder specs/plain/tests
 ```
 
+Run `go test ./tests/verify_test.go` to check fixture staging and failure handling
+with a Cargo stand-in.
+
 To run the steps individually:
 
 1. `cargo build-sbf` in `programs/airspace-escrow` and in `programs/airspace-deposit` builds the programs. Build both before running the tests, because the tests load `target/deploy/*.so`.
