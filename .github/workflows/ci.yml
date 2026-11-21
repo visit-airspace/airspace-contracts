@@ -23,6 +23,12 @@ jobs:
     timeout-minutes: 45
     steps:
       - uses: actions/checkout@v7
+      - uses: actions/setup-go@v7
+        with:
+          go-version: '1.25'
+          cache: false
+      - name: Test the verification workflow
+        run: go test ./tests/verify_test.go
       - name: Install Rust from rust-toolchain.toml
         run: |
           rustup show active-toolchain || rustup toolchain install
